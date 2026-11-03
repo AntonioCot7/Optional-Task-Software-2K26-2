@@ -1,0 +1,68 @@
+---
+title: Diagrama de clases INICIAL (tag pre-refactor)
+---
+classDiagram
+    direction LR
+
+    class BaseModel {
+        <<pydantic>>
+    }
+    class HTTPException {
+        <<fastapi>>
+        +status_code
+        +detail
+    }
+
+    class Database {
+        +path : str
+        +connect() Connection
+        +initialize() void
+    }
+
+    class ItemInput {
+        +product_id : int
+        +quantity : int
+    }
+    class OrderInput {
+        +customer_id : int
+        +address : str
+        +city : str
+        +postal_code : str
+        +shipping : Literal
+        +items : list~ItemInput~
+        +unique_products() OrderInput
+    }
+    class ProductInput {
+        +name : str
+        +price_cents : int
+        +stock : int
+    }
+    class CustomerInput {
+        +name : str
+        +email : EmailStr
+        +category : Literal
+    }
+
+    class OrderService {
+        +database : Database
+        +save(customer_id, address, city, postal_code, shipping, items, order_id) dict
+        +quote(data) dict
+        +get(order_id) dict
+        +list() list
+        +confirm(order_id) dict
+        +cancel(order_id) dict
+        +delete(order_id) void
+        +notifications(order_id) list
+    }
+
+    BaseModel <|-- ItemInput
+    BaseModel <|-- OrderInput
+    BaseModel <|-- ProductInput
+    BaseModel <|-- CustomerInput
+    OrderInput "1" *-- "1..*" ItemInput : items
+    OrderService --> Database : usa
+    OrderService ..> OrderInput : quote(data)
+    OrderService ..> ItemInput : save(items)
+    OrderService ..> HTTPException : lanza 404/409
+
+    note for OrderService "Mezcla reglas de precio (descuento y envio duplicados en save y quote), SQL, transiciones de estado y notificaciones. Las rutas de products.py y customers.py (funciones, no clases) ejecutan SQL directamente sobre Database."

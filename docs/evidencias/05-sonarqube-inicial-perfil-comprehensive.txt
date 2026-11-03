@@ -1,0 +1,75 @@
+# SonarQube - analisis INICIAL con perfil estricto (version 1-inicial-comprehensive, tag pre-refactor)
+# Analisis auxiliar: mismo codigo que 04, distinto perfil de calidad.
+# Fecha: 2026-11-02T22:41:04-05:00
+SonarQube 26.10.0.133078 (http://localhost:9000) estado=UP
+Perfiles de calidad: Sonar way comprehensive [py]
+Quality Gate: OK
+  - new_violations: OK (valor 0)
+Análisis recientes: 1-inicial-comprehensive@2026-11-03T03:39:46, 1-inicial@2026-11-03T03:35:25, inicial@2026-11-03T03:32:49
+
+Métricas globales (todo el código):
+  coverage                   99.7
+  complexity                 69
+  reliability_rating         1.0
+  code_smells                39
+  duplicated_lines_density   0.0
+  security_rating            1.0
+  security_hotspots          0
+  sqale_index                213
+  sqale_rating               1.0
+  bugs                       0
+  lines_to_cover             303
+  uncovered_lines            1
+  cognitive_complexity       55
+  ncloc                      393
+  vulnerabilities            0
+  line_coverage              99.7
+
+Cobertura por archivo:
+  app/__init__.py                cobertura=     -  líneas=   -  sin cubrir=-
+  app/customers.py               cobertura= 100.0  líneas=  49  sin cubrir=0
+  app/database.py                cobertura= 100.0  líneas=  23  sin cubrir=0
+  app/orders.py                  cobertura= 100.0  líneas= 163  sin cubrir=0
+  app/products.py                cobertura= 100.0  líneas=  42  sin cubrir=0
+  main.py                        cobertura=  96.2  líneas=  26  sin cubrir=1
+
+Hallazgos abiertos: 39
+  [MAJOR] CODE_SMELL python:S5778 tests/test_database.py:30 - Refactor this exception test to have only one invocation possibly throwing an exception.
+  [MAJOR] CODE_SMELL python:S5778 tests/test_database.py:39 - Refactor this exception test to have only one invocation possibly throwing an exception.
+  [MAJOR] CODE_SMELL python:S5778 tests/test_database.py:53 - Refactor this exception test to have only one invocation possibly throwing an exception.
+  [MAJOR] CODE_SMELL python:S5778 tests/test_order_rules_unit.py:110 - Refactor this exception test to have only one invocation possibly throwing an exception.
+  [MAJOR] CODE_SMELL python:S5778 tests/test_order_rules_unit.py:112 - Refactor this exception test to have only one invocation possibly throwing an exception.
+  [MAJOR] CODE_SMELL python:S9073 tests/test_orders_api.py:31 - Split this composite assertion into separate assertions.
+  [MAJOR] CODE_SMELL python:S3415 tests/test_orders_api.py:33 - Unify assertion argument order in this file; both "actual first" and "expected first" conventions are used.
+  [CRITICAL] CODE_SMELL python:S1192 app/customers.py:26 - Define a constant instead of duplicating this literal "SELECT * FROM customers WHERE id = ?" 3 times.
+  [MAJOR] CODE_SMELL python:S8415 app/customers.py:28 - Document this HTTPException with status code 409 in the "responses" parameter.
+  [CRITICAL] CODE_SMELL python:S1192 app/customers.py:42 - Define a constant instead of duplicating this literal "Cliente no encontrado" 3 times.
+  [MAJOR] CODE_SMELL python:S8415 app/customers.py:42 - Document this HTTPException with status code 404 in the "responses" parameter.
+  [MAJOR] CODE_SMELL python:S8415 app/customers.py:55 - Document this HTTPException with status code 404 in the "responses" parameter.
+  [MAJOR] CODE_SMELL python:S8415 app/customers.py:58 - Document this HTTPException with status code 409 in the "responses" parameter.
+  [MAJOR] CODE_SMELL python:S8415 app/customers.py:67 - Document this HTTPException with status code 404 in the "responses" parameter.
+  [MAJOR] CODE_SMELL python:S8415 app/customers.py:69 - Document this HTTPException with status code 409 in the "responses" parameter.
+  [CRITICAL] CODE_SMELL python:S3776 app/orders.py:33 - Refactor this function to reduce its Cognitive Complexity from 19 to the 15 allowed.
+  [CRITICAL] CODE_SMELL python:S1192 app/orders.py:36 - Define a constant instead of duplicating this literal "SELECT * FROM orders WHERE id = ?" 6 times.
+  [CRITICAL] CODE_SMELL python:S1192 app/orders.py:38 - Define a constant instead of duplicating this literal "Pedido no encontrado" 5 times.
+  [MAJOR] CODE_SMELL python:S8415 app/orders.py:38 - Document this HTTPException with status code 404 in the "responses" parameter.
+  [MAJOR] CODE_SMELL python:S8415 app/orders.py:40 - Document this HTTPException with status code 409 in the "responses" parameter.
+  [CRITICAL] CODE_SMELL python:S1192 app/orders.py:41 - Define a constant instead of duplicating this literal "SELECT * FROM customers WHERE id = ?" 3 times.
+  [MAJOR] CODE_SMELL python:S8415 app/orders.py:43 - Document this HTTPException with status code 404 in the "responses" parameter.
+  [MAJOR] CODE_SMELL python:S8415 app/orders.py:49 - Document this HTTPException with status code 404 in the "responses" parameter.
+  [MAJOR] CODE_SMELL python:S8415 app/orders.py:96 - Document this HTTPException with status code 404 in the "responses" parameter.
+  [MAJOR] CODE_SMELL python:S8415 app/orders.py:101 - Document this HTTPException with status code 404 in the "responses" parameter.
+  [MAJOR] CODE_SMELL python:S8415 app/orders.py:122 - Document this HTTPException with status code 404 in the "responses" parameter.
+  [MAJOR] CODE_SMELL python:S8415 app/orders.py:138 - Document this HTTPException with status code 404 in the "responses" parameter.
+  [MAJOR] CODE_SMELL python:S8415 app/orders.py:140 - Document this HTTPException with status code 409 in the "responses" parameter.
+  [MAJOR] CODE_SMELL python:S8415 app/orders.py:148 - Document this HTTPException with status code 409 in the "responses" parameter.
+  [MAJOR] CODE_SMELL python:S8415 app/orders.py:162 - Document this HTTPException with status code 404 in the "responses" parameter.
+  [MAJOR] CODE_SMELL python:S8415 app/orders.py:164 - Document this HTTPException with status code 409 in the "responses" parameter.
+  [MAJOR] CODE_SMELL python:S8415 app/orders.py:172 - Document this HTTPException with status code 404 in the "responses" parameter.
+  [MAJOR] CODE_SMELL python:S8415 app/orders.py:174 - Document this HTTPException with status code 409 in the "responses" parameter.
+  [CRITICAL] CODE_SMELL python:S1192 app/products.py:24 - Define a constant instead of duplicating this literal "SELECT * FROM products WHERE id = ?" 3 times.
+  [CRITICAL] CODE_SMELL python:S1192 app/products.py:38 - Define a constant instead of duplicating this literal "Producto no encontrado" 3 times.
+  [MAJOR] CODE_SMELL python:S8415 app/products.py:38 - Document this HTTPException with status code 404 in the "responses" parameter.
+  [MAJOR] CODE_SMELL python:S8415 app/products.py:50 - Document this HTTPException with status code 404 in the "responses" parameter.
+  [MAJOR] CODE_SMELL python:S8415 app/products.py:60 - Document this HTTPException with status code 404 in the "responses" parameter.
+  [MAJOR] CODE_SMELL python:S8415 app/products.py:62 - Document this HTTPException with status code 409 in the "responses" parameter.

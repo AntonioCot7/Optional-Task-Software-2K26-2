@@ -1,0 +1,44 @@
+﻿# Evidencia - Ejecucion de la API (estado final, tag post-refactor)
+Fecha: 2026-11-02T22:48:45
+Python: Python 3.13.18
+uv: uv 0.13.7 (316c827e0 2026-11-03 x86_64-pc-windows-msvc)
+Servidor: uv run main.py  (LAB_DB_PATH temporal)
+
+
+[OK] 1. POST /customers
+    HTTP 201 (esperado 201)
+    {"id":1,"name":"Ana Torres","email":"ana@example.com","category":"premium"}
+
+[OK] 2. POST /products
+    HTTP 201 (esperado 201)
+    {"id":1,"name":"Libro de algoritmos","price_cents":2500,"stock":5}
+
+[OK] 3a. POST /orders/quote (subtotal 5000, descuento 500, envio 1000, total 5500)
+    HTTP 200 (esperado 200)
+    {"subtotal_cents":5000,"discount_cents":500,"shipping_cents":1000,"total_cents":5500}
+
+[OK] 3b. POST /orders
+    HTTP 201 (esperado 201)
+    {"id":1,"customer_id":1,"status":"pending","customer_category":"premium","address":"Av. Primavera 100","city":"Lima","postal_code":"15001","shipping":"standard","subtotal_cents":5000,"discount_cents":500,"shipping_cents":1000,"total_cents":5500,"items":[{"product_id":1,"quantity":2,"unit_price_cents":2500}]}
+
+[OK] 4. POST /orders/1/confirm
+    HTTP 200 (esperado 200)
+    {"id":1,"status":"confirmed","message":"Pedido 1 confirmado. Total: 5500 centavos."}
+
+[OK] 5. GET /products/1 (stock debe ser 3)
+    HTTP 200 (esperado 200)
+    {"id":1,"name":"Libro de algoritmos","price_cents":2500,"stock":3}
+
+[OK] 6. GET /orders/1/notifications (1 notificacion)
+    HTTP 200 (esperado 200)
+    [{"id":1,"order_id":1,"recipient":"ana@example.com","message":"Pedido 1 confirmado. Total: 5500 centavos."}]
+
+[OK] 7. POST /orders/1/confirm otra vez (409, sin descontar mas stock)
+    HTTP 409 (esperado 409)
+    {"detail":"El pedido ya no está pendiente"}
+
+[OK] 7b. GET /products/1 (stock sigue en 3)
+    HTTP 200 (esperado 200)
+    {"id":1,"name":"Libro de algoritmos","price_cents":2500,"stock":3}
+
+RESULTADO: TODO CORRECTO

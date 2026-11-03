@@ -1,0 +1,54 @@
+# SonarQube - analisis FINAL con perfil estricto (version 2-final-comprehensive, tag post-refactor)
+# Fecha: 2026-11-02T22:45:48-05:00
+SonarQube 26.10.0.133078 (http://localhost:9000) estado=UP
+Perfiles de calidad: Sonar way comprehensive [py]
+Quality Gate: ERROR
+  - new_coverage: OK (valor 100.0)
+  - new_duplicated_lines_density: OK (valor 0.0)
+  - new_violations: ERROR (valor 6)
+Análisis recientes: 2-final-comprehensive@2026-11-03T03:45:10, 2-final-comprehensive@2026-11-03T03:43:06, 1-inicial-comprehensive@2026-11-03T03:39:46, 1-inicial@2026-11-03T03:35:25, inicial@2026-11-03T03:32:49
+
+Métricas globales (todo el código):
+  coverage                   99.8
+  complexity                 101
+  reliability_rating         1.0
+  code_smells                13
+  duplicated_lines_density   0.0
+  security_rating            1.0
+  security_hotspots          0
+  sqale_index                62
+  sqale_rating               1.0
+  bugs                       0
+  lines_to_cover             403
+  uncovered_lines            1
+  cognitive_complexity       33
+  ncloc                      496
+  vulnerabilities            0
+  line_coverage              99.8
+
+Cobertura por archivo:
+  app/__init__.py                cobertura=     -  líneas=   -  sin cubrir=-
+  app/customers.py               cobertura= 100.0  líneas=  59  sin cubrir=0
+  app/database.py                cobertura= 100.0  líneas=  23  sin cubrir=0
+  app/dependencies.py            cobertura= 100.0  líneas=  14  sin cubrir=0
+  app/domain.py                  cobertura= 100.0  líneas=  13  sin cubrir=0
+  app/order_repository.py        cobertura= 100.0  líneas=  46  sin cubrir=0
+  app/orders.py                  cobertura= 100.0  líneas= 140  sin cubrir=0
+  app/pricing.py                 cobertura= 100.0  líneas=  26  sin cubrir=0
+  app/products.py                cobertura= 100.0  líneas=  56  sin cubrir=0
+  main.py                        cobertura=  96.2  líneas=  26  sin cubrir=1
+
+Hallazgos abiertos: 13
+  [MAJOR] CODE_SMELL python:S8415 app/customers.py:72 - Document this HTTPException with status code 404 in the "responses" parameter.
+  [MAJOR] CODE_SMELL python:S8415 app/customers.py:81 - Document this HTTPException with status code 404 in the "responses" parameter.
+  [MAJOR] CODE_SMELL python:S8415 app/customers.py:90 - Document this HTTPException with status code 404 in the "responses" parameter.
+  [MAJOR] CODE_SMELL python:S8415 app/products.py:67 - Document this HTTPException with status code 404 in the "responses" parameter.
+  [MAJOR] CODE_SMELL python:S8415 app/products.py:76 - Document this HTTPException with status code 404 in the "responses" parameter.
+  [MAJOR] CODE_SMELL python:S8415 app/products.py:85 - Document this HTTPException with status code 404 in the "responses" parameter.
+  [MAJOR] CODE_SMELL python:S5778 tests/test_database.py:30 - Refactor this exception test to have only one invocation possibly throwing an exception.
+  [MAJOR] CODE_SMELL python:S5778 tests/test_database.py:39 - Refactor this exception test to have only one invocation possibly throwing an exception.
+  [MAJOR] CODE_SMELL python:S5778 tests/test_database.py:53 - Refactor this exception test to have only one invocation possibly throwing an exception.
+  [MAJOR] CODE_SMELL python:S5778 tests/test_order_rules_unit.py:110 - Refactor this exception test to have only one invocation possibly throwing an exception.
+  [MAJOR] CODE_SMELL python:S5778 tests/test_order_rules_unit.py:112 - Refactor this exception test to have only one invocation possibly throwing an exception.
+  [MAJOR] CODE_SMELL python:S9073 tests/test_orders_api.py:31 - Split this composite assertion into separate assertions.
+  [MAJOR] CODE_SMELL python:S3415 tests/test_orders_api.py:33 - Unify assertion argument order in this file; both "actual first" and "expected first" conventions are used.

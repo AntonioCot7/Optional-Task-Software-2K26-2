@@ -1,0 +1,39 @@
+# SonarQube - analisis FINAL (version 2-final, tag post-refactor, perfil por defecto)
+# Fecha: 2026-11-02T22:47:18-05:00
+SonarQube 26.10.0.133078 (http://localhost:9000) estado=UP
+Perfiles de calidad: Sonar way core [py]
+Quality Gate: OK
+  - new_violations: OK (valor 0)
+Análisis recientes: 2-final@2026-11-03T03:46:36, 2-final-comprehensive@2026-11-03T03:45:10, 2-final-comprehensive@2026-11-03T03:43:06, 1-inicial-comprehensive@2026-11-03T03:39:46, 1-inicial@2026-11-03T03:35:25
+
+Métricas globales (todo el código):
+  coverage                   99.8
+  complexity                 101
+  reliability_rating         1.0
+  code_smells                0
+  duplicated_lines_density   0.0
+  security_rating            1.0
+  security_hotspots          0
+  sqale_index                0
+  sqale_rating               1.0
+  bugs                       0
+  lines_to_cover             403
+  uncovered_lines            1
+  cognitive_complexity       33
+  ncloc                      496
+  vulnerabilities            0
+  line_coverage              99.8
+
+Cobertura por archivo:
+  app/__init__.py                cobertura=     -  líneas=   -  sin cubrir=-
+  app/customers.py               cobertura= 100.0  líneas=  59  sin cubrir=0
+  app/database.py                cobertura= 100.0  líneas=  23  sin cubrir=0
+  app/dependencies.py            cobertura= 100.0  líneas=  14  sin cubrir=0
+  app/domain.py                  cobertura= 100.0  líneas=  13  sin cubrir=0
+  app/order_repository.py        cobertura= 100.0  líneas=  46  sin cubrir=0
+  app/orders.py                  cobertura= 100.0  líneas= 140  sin cubrir=0
+  app/pricing.py                 cobertura= 100.0  líneas=  26  sin cubrir=0
+  app/products.py                cobertura= 100.0  líneas=  56  sin cubrir=0
+  main.py                        cobertura=  96.2  líneas=  26  sin cubrir=1
+
+Hallazgos abiertos: 0

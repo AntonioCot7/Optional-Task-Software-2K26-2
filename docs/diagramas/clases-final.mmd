@@ -1,0 +1,148 @@
+---
+title: Diagrama de clases FINAL (tag post-refactor)
+---
+classDiagram
+    direction LR
+
+    class BaseModel {
+        <<pydantic>>
+    }
+    class HTTPException {
+        <<fastapi>>
+    }
+
+    class CustomerCategory {
+        <<enumeration>>
+        REGULAR
+        PREMIUM
+        BUSINESS
+    }
+    class ShippingMethod {
+        <<enumeration>>
+        PICKUP
+        STANDARD
+        EXPRESS
+    }
+    class OrderStatus {
+        <<enumeration>>
+        PENDING
+        CONFIRMED
+        CANCELLED
+    }
+
+    class Database {
+        +path : str
+        +connect() Connection
+        +initialize() void
+    }
+
+    class ItemInput {
+        +product_id : int
+        +quantity : int
+    }
+    class OrderInput {
+        +customer_id : int
+        +address : str
+        +city : str
+        +postal_code : str
+        +shipping : ShippingMethod
+        +items : list~ItemInput~
+        +unique_products() OrderInput
+    }
+    class ProductInput {
+        +name : str
+        +price_cents : int
+        +stock : int
+    }
+    class CustomerInput {
+        +name : str
+        +email : EmailStr
+        +category : CustomerCategory
+    }
+
+    class PriceBreakdown {
+        <<dataclass frozen>>
+        +subtotal_cents : int
+        +discount_cents : int
+        +shipping_cents : int
+        +total_cents() int
+        +as_quote() dict
+    }
+    class PricedOrder {
+        <<NamedTuple>>
+        +customer : Row
+        +lines : tuple
+        +price : PriceBreakdown
+    }
+
+    class OrderService {
+        +database : Database
+        +save(data, order_id) dict
+        +quote(data) dict
+        +get(order_id) dict
+        +list() list
+        +confirm(order_id) dict
+        +cancel(order_id) dict
+        +delete(order_id) void
+        +notifications(order_id) list
+        -_require_detail(orders, order_id) dict
+        -_require_pending(orders, order_id, message) Row
+        -_price(orders, data) PricedOrder
+    }
+    class OrderRepository {
+        +connection : Connection
+        +find(order_id) Row
+        +find_detail(order_id) dict
+        +list_all() list
+        +find_items(order_id) list
+        +find_customer(customer_id) Row
+        +find_product(product_id) Row
+        +notifications(order_id) list
+        +insert(data, category, price) int
+        +update(order_id, data, category, price) void
+        +replace_items(order_id, lines) void
+        +set_status(order_id, status) void
+        +delete(order_id) void
+        +deduct_stock(product_id, quantity) bool
+        +add_notification(order_id, recipient, message) void
+    }
+    class ProductRepository {
+        +connection : Connection
+        +create(data) dict
+        +list_all() list
+        +find(product_id) dict
+        +update(product_id, data) dict
+        +delete(product_id) bool
+    }
+    class CustomerRepository {
+        +connection : Connection
+        +create(data) dict
+        +list_all() list
+        +find(customer_id) dict
+        +update(customer_id, data) dict
+        +delete(customer_id) bool
+    }
+
+    BaseModel <|-- ItemInput
+    BaseModel <|-- OrderInput
+    BaseModel <|-- ProductInput
+    BaseModel <|-- CustomerInput
+    OrderInput "1" *-- "1..*" ItemInput : items
+    OrderInput ..> ShippingMethod
+    CustomerInput ..> CustomerCategory
+    PricedOrder *-- PriceBreakdown : price
+
+    OrderService --> Database : usa
+    OrderService ..> OrderRepository : crea por transaccion
+    OrderService ..> PriceBreakdown : calcula
+    OrderService ..> PricedOrder : devuelve
+    OrderService ..> OrderInput : recibe
+    OrderService ..> OrderStatus
+    OrderService ..> HTTPException : lanza 404/409
+    OrderRepository ..> PriceBreakdown : persiste
+    OrderRepository ..> OrderStatus
+    ProductRepository ..> ProductInput
+    CustomerRepository ..> CustomerInput
+
+    note for PriceBreakdown "Las reglas de descuento y envio son funciones puras de app/pricing.py (calculate_discount, calculate_shipping, price_order): modulo de funciones, no clase."
+    note for ProductRepository "Las rutas de products.py y customers.py son funciones que reciben Database por Depends y delegan en estos repositorios."
