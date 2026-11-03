@@ -55,9 +55,9 @@ resueltos, cada uno en su rama (sección 9).
 | `estado-inicial` | `969cbdb` (commit original, ver `git rev-parse estado-inicial`) | Código original del enunciado (4 pruebas, 67 %). |
 | **`pre-refactor`** | `git rev-parse pre-refactor` | **Revisión inicial**: código original **intacto** + 160 pruebas + ajuste de `coverage` (§5.2). Es la base de las métricas «antes». |
 | **`post-refactor`** | `git rev-parse post-refactor` | **Revisión final** de la refactorización (código de aplicación). Base de las métricas «después». |
-| rama `refactor` | `246a52a` | `post-refactor` + diagramas, evidencias y documentos. |
-| rama `adicional-1-idempotencia` | `dbd5ec4` | Adicional 1 (parte de `refactor`). |
-| rama `adicional-2-cola-dlq` | `2e41eb1` | Adicional 2 (parte de `refactor`). |
+| rama `main` (entrega) | HEAD | `post-refactor` + diagramas, evidencias, informe y documentos (solo cambian archivos de `docs/`, `scripts/` y el README respecto a `post-refactor`). |
+| rama `adicional-1-idempotencia` | HEAD de la rama | Adicional 1 (parte del commit «DOCS: Añade evidencias de SonarQube, diagramas de clases y scripts de apoyo» de `main`). |
+| rama `adicional-2-cola-dlq` | HEAD de la rama | Adicional 2 (parte del commit «DOCS: Añade evidencias de SonarQube, diagramas de clases y scripts de apoyo» de `main`). |
 
 ```bash
 git diff pre-refactor post-refactor --stat -- app main.py     # qué cambió en el código
@@ -300,13 +300,13 @@ Las asociaciones y dependencias están etiquetadas. Se exportaron con Mermaid 11
 
 ## 9. Adicionales (resueltos, cada uno en su rama)
 
-Son independientes entre sí y **no forman parte de la base** (no están en `main`; se parte de `refactor`).
+Son independientes entre sí y **no forman parte de la base** (no están en `main`; cada rama parte del commit «DOCS: Añade evidencias de SonarQube, diagramas de clases y scripts de apoyo»).
 
 | Adicional | Rama | Resumen | Documento |
 | --- | --- | --- | --- |
 | 1. Idempotencia | `adicional-1-idempotencia` | Cabecera `Idempotency-Key`; la clave se guarda en la **misma transacción** que el pedido. Misma clave+contenido → respuesta original; contenido distinto → 409; concurrencia → un pedido (8 hilos); persiste tras reiniciar; un error no deja clave ni pedido parcial. 26 pruebas; contrato solo aditivo. | [`ADICIONAL-1-IDEMPOTENCIA.md`](https://github.com/AntonioCot7/Optional-Task-Software-2K26-2/blob/adicional-1-idempotencia/docs/ADICIONAL-1-IDEMPOTENCIA.md) (en su rama) |
 | 2. Cola y DLQ | `adicional-2-cola-dlq` | *Outbox* transaccional; un worker con reintentos (máx. 3, espera 2 s y 4 s), fallos simulados reproducibles, DLQ con contenido/intentos/causa, reprocesamiento explícito, recuperación por *lease*, efecto idempotente por `dedup_key`. 33 pruebas; demo real en `docs/evidencias/10-demo-cola-dlq.txt` (en la rama). | [`ADICIONAL-2-COLA-DLQ.md`](https://github.com/AntonioCot7/Optional-Task-Software-2K26-2/blob/adicional-2-cola-dlq/docs/ADICIONAL-2-COLA-DLQ.md) (en su rama) |
-| 3. Análisis VHS | `refactor` / `main` | Conclusión: **adopción parcial y gradual**; no completa ahora. Distingue beneficios de la arquitectura de problemas que resuelve una refactorización sencilla; fuentes y límites de la investigación. | [`ADICIONAL-3-VHS.md`](ADICIONAL-3-VHS.md) |
+| 3. Análisis VHS | `main` | Conclusión: **adopción parcial y gradual**; no completa ahora. Distingue beneficios de la arquitectura de problemas que resuelve una refactorización sencilla; fuentes y límites de la investigación. | [`ADICIONAL-3-VHS.md`](ADICIONAL-3-VHS.md) |
 
 Las pruebas de ambos adicionales: 210 (adicional 1) y 217 (adicional 2) en total en sus ramas, todas en verde, cobertura 99,77 % y 98,43 %.
 
