@@ -1,0 +1,33 @@
+# Cobertura ANTES de refactorizar (estado-inicial + suite ampliada)
+# Fecha: 2026-11-02T22:04:55-05:00
+# Comando: uv run pytest --cov --cov-report=term-missing --cov-report=xml --cov-report=html --cov-fail-under=80
+============================= test session starts =============================
+platform win32 -- Python 3.13.18, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\PC Antonio\Downloads\Optional-Task-Software-2K26-2
+configfile: pyproject.toml
+testpaths: tests
+plugins: anyio-4.15.1, cov-7.1.0
+collected 160 items
+tests\test_customers_api.py ......................                       [ 13%]
+tests\test_database.py ..........                                        [ 20%]
+tests\test_order_rules_unit.py ..........................                [ 36%]
+tests\test_orders.py ....                                                [ 38%]
+tests\test_orders_api.py ............................................... [ 68%]
+..........................                                               [ 84%]
+tests\test_products_api.py .........................                     [100%]
+=============================== tests coverage ================================
+______________ coverage: platform win32, python 3.13.18-final-0 _______________
+Name               Stmts   Miss  Cover   Missing
+------------------------------------------------
+app\__init__.py        0      0   100%
+app\customers.py      49      0   100%
+app\database.py       23      0   100%
+app\orders.py        163      0   100%
+app\products.py       42      0   100%
+main.py               26      1    96%   38
+------------------------------------------------
+TOTAL                303      1    99%
+Coverage HTML written to dir htmlcov
+Coverage XML written to file coverage.xml
+Required test coverage of 80% reached. Total coverage: 99.67%
+============================ 160 passed in 17.31s =============================

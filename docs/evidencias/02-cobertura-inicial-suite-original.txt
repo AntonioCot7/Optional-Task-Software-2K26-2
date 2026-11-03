@@ -1,0 +1,23 @@
+# Linea base (estado-inicial, commit 969cbdb) - 4 pruebas iniciales
+# Fecha: 2026-11-02T22:01:08-05:00
+============================= test session starts =============================
+platform win32 -- Python 3.13.18, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\PC Antonio\Downloads\Optional-Task-Software-2K26-2
+configfile: pyproject.toml
+testpaths: tests
+plugins: anyio-4.15.1, cov-7.1.0
+collected 4 items
+tests\test_orders.py ....                                                [100%]
+=============================== tests coverage ================================
+______________ coverage: platform win32, python 3.13.18-final-0 _______________
+Name               Stmts   Miss  Cover   Missing
+------------------------------------------------
+app\__init__.py        0      0   100%
+app\customers.py      49     25    49%   27-28, 33-34, 39-43, 48-58, 63-70
+app\database.py       23      0   100%
+app\orders.py        163     60    63%   36-40, 43, 49, 54-57, 59, 63, 75-80, 93-115, 122, 131-132, 138, 159-166, 169-175, 190, 202, 212, 219-220, 230
+app\products.py       42     12    71%   29-30, 38, 50, 56-63
+main.py               26      2    92%   29, 38
+------------------------------------------------
+TOTAL                303     99    67%
+============================== 4 passed in 2.60s ==============================
