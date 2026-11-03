@@ -2,6 +2,8 @@
 
 Laboratorio de pruebas, análisis estático y refactorización de una API de pedidos e inventario. El código contiene problemas de diseño intencionales. El objetivo es identificarlos y mejorar su estructura sin cambiar las reglas de negocio.
 
+> **Entrega.** El informe (smells, refactorizaciones, SonarQube antes/después, diagramas, comandos y limitaciones) está en [`docs/INFORME.md`](docs/INFORME.md). Análisis VHS (Adicional 3): [`docs/ADICIONAL-3-VHS.md`](docs/ADICIONAL-3-VHS.md). Los Adicionales 1 y 2 están en las ramas `adicional-1-idempotencia` y `adicional-2-cola-dlq`. Revisiones: `estado-inicial` → `pre-refactor` → `post-refactor`.
+
 ## Requisitos
 
 - Git y uv.
