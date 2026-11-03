@@ -1,7 +1,12 @@
-from typing import Literal
+import sqlite3
+from typing import Annotated, Literal, NamedTuple
 
-from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+from app.domain import OrderStatus, ShippingMethod
+from app.order_repository import OrderRepository
+from app.pricing import PriceBreakdown, price_order
 
 
 class ItemInput(BaseModel):
@@ -16,7 +21,9 @@ class OrderInput(BaseModel):
     address: str = Field(min_length=1, max_length=200)
     city: str = Field(min_length=1, max_length=100)
     postal_code: str = Field(min_length=1, max_length=20)
-    shipping: Literal["pickup", "standard", "express"] = "standard"
+    shipping: Literal[ShippingMethod.PICKUP, ShippingMethod.STANDARD, ShippingMethod.EXPRESS] = (
+        ShippingMethod.STANDARD
+    )
     items: list[ItemInput] = Field(min_length=1, max_length=100)
 
     @model_validator(mode="after")
@@ -26,210 +33,161 @@ class OrderInput(BaseModel):
         return self
 
 
+class PricedOrder(NamedTuple):
+    """Resultado de validar y valorar un pedido: cliente, líneas (product_id, cantidad, precio) y precio."""
+    customer: sqlite3.Row
+    lines: tuple
+    price: PriceBreakdown
+
+
 class OrderService:
+    """Casos de uso de pedidos. Las reglas de precio viven en app.pricing y el SQL en OrderRepository."""
+
     def __init__(self, database):
         self.database = database
 
-    def save(self, customer_id, address, city, postal_code, shipping, items, order_id=None):
+    def save(self, data: OrderInput, order_id=None):
         with self.database.connect() as connection:
+            orders = OrderRepository(connection)
             if order_id is not None:
-                old = connection.execute("SELECT * FROM orders WHERE id = ?", (order_id,)).fetchone()
-                if old is None:
-                    raise HTTPException(404, "Pedido no encontrado")
-                if old["status"] != "pending":
-                    raise HTTPException(409, "Solo puede editar pedidos pendientes")
-            customer = connection.execute("SELECT * FROM customers WHERE id = ?", (customer_id,)).fetchone()
-            if customer is None:
-                raise HTTPException(404, "Cliente no encontrado")
-            subtotal = 0
-            lines = []
-            for item in items:
-                product = connection.execute("SELECT * FROM products WHERE id = ?", (item.product_id,)).fetchone()
-                if product is None:
-                    raise HTTPException(404, f"Producto {item.product_id} no encontrado")
-                subtotal += product["price_cents"] * item.quantity
-                lines.append((item.product_id, item.quantity, product["price_cents"]))
-            if customer["category"] == "premium":
-                discount = subtotal * 10 // 100
-            elif customer["category"] == "business":
-                discount = subtotal * 15 // 100
-            else:
-                discount = 0
-            if shipping == "pickup":
-                delivery = 0
-            elif shipping == "standard":
-                delivery = 0 if subtotal >= 10_000 else 1_000
-            else:
-                delivery = 2_500
-            total = subtotal - discount + delivery
-            values = (customer_id, customer["category"], address, city, postal_code, shipping,
-                      subtotal, discount, delivery, total)
+                self._require_pending(orders, order_id, "Solo puede editar pedidos pendientes")
+            priced = self._price(orders, data)
+            category = priced.customer["category"]
             if order_id is None:
-                cursor = connection.execute(
-                    """INSERT INTO orders(customer_id, customer_category, address, city, postal_code,
-                       shipping, subtotal_cents, discount_cents, shipping_cents, total_cents)
-                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""", values,
-                )
-                order_id = cursor.lastrowid
+                order_id = orders.insert(data, category, priced.price)
             else:
-                connection.execute(
-                    """UPDATE orders SET customer_id = ?, customer_category = ?, address = ?, city = ?,
-                       postal_code = ?, shipping = ?, subtotal_cents = ?, discount_cents = ?,
-                       shipping_cents = ?, total_cents = ? WHERE id = ?""", (*values, order_id),
-                )
-                connection.execute("DELETE FROM order_items WHERE order_id = ?", (order_id,))
-            connection.executemany(
-                "INSERT INTO order_items(order_id, product_id, quantity, unit_price_cents) VALUES (?, ?, ?, ?)",
-                [(order_id, *line) for line in lines],
-            )
-            result = dict(connection.execute("SELECT * FROM orders WHERE id = ?", (order_id,)).fetchone())
-            result["items"] = [dict(row) for row in connection.execute(
-                "SELECT product_id, quantity, unit_price_cents FROM order_items WHERE order_id = ? ORDER BY id",
-                (order_id,),
-            )]
-            return result
+                orders.update(order_id, data, category, priced.price)
+            orders.replace_items(order_id, priced.lines)
+            return orders.find_detail(order_id)
 
-    def quote(self, data):
+    def quote(self, data: OrderInput):
         with self.database.connect() as connection:
-            customer = connection.execute("SELECT * FROM customers WHERE id = ?", (data.customer_id,)).fetchone()
-            if customer is None:
-                raise HTTPException(404, "Cliente no encontrado")
-            subtotal = 0
-            for item in data.items:
-                product = connection.execute("SELECT * FROM products WHERE id = ?", (item.product_id,)).fetchone()
-                if product is None:
-                    raise HTTPException(404, f"Producto {item.product_id} no encontrado")
-                subtotal += product["price_cents"] * item.quantity
-            if customer["category"] == "premium":
-                discount = subtotal * 10 // 100
-            elif customer["category"] == "business":
-                discount = subtotal * 15 // 100
-            else:
-                discount = 0
-            if data.shipping == "pickup":
-                delivery = 0
-            elif data.shipping == "standard":
-                delivery = 0 if subtotal >= 10_000 else 1_000
-            else:
-                delivery = 2_500
-            return {"subtotal_cents": subtotal, "discount_cents": discount,
-                    "shipping_cents": delivery, "total_cents": subtotal - discount + delivery}
+            return self._price(OrderRepository(connection), data).price.as_quote()
 
     def get(self, order_id):
         with self.database.connect() as connection:
-            order = connection.execute("SELECT * FROM orders WHERE id = ?", (order_id,)).fetchone()
-            if order is None:
-                raise HTTPException(404, "Pedido no encontrado")
-            result = dict(order)
-            result["items"] = [dict(row) for row in connection.execute(
-                "SELECT product_id, quantity, unit_price_cents FROM order_items WHERE order_id = ? ORDER BY id",
-                (order_id,),
-            )]
-            return result
+            return self._require_detail(OrderRepository(connection), order_id)
 
     def list(self):
         with self.database.connect() as connection:
-            return [dict(row) for row in connection.execute("SELECT * FROM orders ORDER BY id")]
+            return OrderRepository(connection).list_all()
 
     def confirm(self, order_id):
         with self.database.connect() as connection:
-            order = connection.execute("SELECT * FROM orders WHERE id = ?", (order_id,)).fetchone()
-            if order is None:
-                raise HTTPException(404, "Pedido no encontrado")
-            if order["status"] != "pending":
-                raise HTTPException(409, "El pedido ya no está pendiente")
-            items = connection.execute("SELECT * FROM order_items WHERE order_id = ?", (order_id,)).fetchall()
-            for item in items:
-                cursor = connection.execute(
-                    "UPDATE products SET stock = stock - ? WHERE id = ? AND stock >= ?",
-                    (item["quantity"], item["product_id"], item["quantity"]),
-                )
-                if cursor.rowcount == 0:
+            orders = OrderRepository(connection)
+            order = self._require_pending(orders, order_id, "El pedido ya no está pendiente")
+            for item in orders.find_items(order_id):
+                if not orders.deduct_stock(item["product_id"], item["quantity"]):
                     raise HTTPException(409, f"Stock insuficiente para producto {item['product_id']}")
-            customer = connection.execute("SELECT * FROM customers WHERE id = ?", (order["customer_id"],)).fetchone()
+            customer = orders.find_customer(order["customer_id"])
             message = f"Pedido {order_id} confirmado. Total: {order['total_cents']} centavos."
-            connection.execute(
-                "INSERT INTO notifications(order_id, recipient, message) VALUES (?, ?, ?)",
-                (order_id, customer["email"], message),
-            )
-            connection.execute("UPDATE orders SET status = 'confirmed' WHERE id = ?", (order_id,))
-            return {"id": order_id, "status": "confirmed", "message": message}
+            orders.add_notification(order_id, customer["email"], message)
+            orders.set_status(order_id, OrderStatus.CONFIRMED)
+            return {"id": order_id, "status": OrderStatus.CONFIRMED, "message": message}
 
     def cancel(self, order_id):
         with self.database.connect() as connection:
-            order = connection.execute("SELECT * FROM orders WHERE id = ?", (order_id,)).fetchone()
-            if order is None:
-                raise HTTPException(404, "Pedido no encontrado")
-            if order["status"] != "pending":
-                raise HTTPException(409, "Solo puede cancelar pedidos pendientes")
-            connection.execute("UPDATE orders SET status = 'cancelled' WHERE id = ?", (order_id,))
-            return {"id": order_id, "status": "cancelled"}
+            orders = OrderRepository(connection)
+            self._require_pending(orders, order_id, "Solo puede cancelar pedidos pendientes")
+            orders.set_status(order_id, OrderStatus.CANCELLED)
+            return {"id": order_id, "status": OrderStatus.CANCELLED}
 
     def delete(self, order_id):
         with self.database.connect() as connection:
-            order = connection.execute("SELECT * FROM orders WHERE id = ?", (order_id,)).fetchone()
-            if order is None:
-                raise HTTPException(404, "Pedido no encontrado")
-            if order["status"] != "pending":
-                raise HTTPException(409, "Solo puede eliminar pedidos pendientes")
-            connection.execute("DELETE FROM orders WHERE id = ?", (order_id,))
+            orders = OrderRepository(connection)
+            self._require_pending(orders, order_id, "Solo puede eliminar pedidos pendientes")
+            orders.delete(order_id)
 
     def notifications(self, order_id):
-        self.get(order_id)
         with self.database.connect() as connection:
-            return [dict(row) for row in connection.execute(
-                "SELECT * FROM notifications WHERE order_id = ? ORDER BY id", (order_id,),
-            )]
+            orders = OrderRepository(connection)
+            self._require_detail(orders, order_id)
+            return orders.notifications(order_id)
 
+    # ---- pasos compartidos
+    @staticmethod
+    def _require_detail(orders: OrderRepository, order_id):
+        detail = orders.find_detail(order_id)
+        if detail is None:
+            raise HTTPException(404, "Pedido no encontrado")
+        return detail
+
+    @staticmethod
+    def _require_pending(orders: OrderRepository, order_id, conflict_message):
+        order = orders.find(order_id)
+        if order is None:
+            raise HTTPException(404, "Pedido no encontrado")
+        if order["status"] != OrderStatus.PENDING:
+            raise HTTPException(409, conflict_message)
+        return order
+
+    @staticmethod
+    def _price(orders: OrderRepository, data: OrderInput) -> PricedOrder:
+        """Valida cliente y productos y calcula el precio con los valores actuales del catálogo."""
+        customer = orders.find_customer(data.customer_id)
+        if customer is None:
+            raise HTTPException(404, "Cliente no encontrado")
+        subtotal = 0
+        lines = []
+        for item in data.items:
+            product = orders.find_product(item.product_id)
+            if product is None:
+                raise HTTPException(404, f"Producto {item.product_id} no encontrado")
+            subtotal += product["price_cents"] * item.quantity
+            lines.append((item.product_id, item.quantity, product["price_cents"]))
+        return PricedOrder(customer, tuple(lines), price_order(customer["category"], data.shipping, subtotal))
+
+
+def get_order_service(request: Request) -> OrderService:
+    return OrderService(request.app.state.database)
+
+
+OrderServiceDep = Annotated[OrderService, Depends(get_order_service)]
 
 router = APIRouter(prefix="/orders", tags=["Orders"])
 
 
 @router.post("/quote")
-def quote_order(data: OrderInput, request: Request):
-    return OrderService(request.app.state.database).quote(data)
+def quote_order(data: OrderInput, service: OrderServiceDep):
+    return service.quote(data)
 
 
 @router.post("", status_code=201)
-def create_order(data: OrderInput, request: Request):
-    return OrderService(request.app.state.database).save(
-        data.customer_id, data.address, data.city, data.postal_code, data.shipping, data.items,
-    )
+def create_order(data: OrderInput, service: OrderServiceDep):
+    return service.save(data)
 
 
 @router.get("")
-def list_orders(request: Request):
-    return OrderService(request.app.state.database).list()
+def list_orders(service: OrderServiceDep):
+    return service.list()
 
 
 @router.get("/{order_id}")
-def get_order(order_id: int, request: Request):
-    return OrderService(request.app.state.database).get(order_id)
+def get_order(order_id: int, service: OrderServiceDep):
+    return service.get(order_id)
 
 
 @router.put("/{order_id}")
-def update_order(order_id: int, data: OrderInput, request: Request):
-    return OrderService(request.app.state.database).save(
-        data.customer_id, data.address, data.city, data.postal_code, data.shipping, data.items, order_id,
-    )
+def update_order(order_id: int, data: OrderInput, service: OrderServiceDep):
+    return service.save(data, order_id)
 
 
 @router.delete("/{order_id}", status_code=204)
-def delete_order(order_id: int, request: Request):
-    OrderService(request.app.state.database).delete(order_id)
+def delete_order(order_id: int, service: OrderServiceDep):
+    service.delete(order_id)
     return Response(status_code=204)
 
 
 @router.post("/{order_id}/confirm")
-def confirm_order(order_id: int, request: Request):
-    return OrderService(request.app.state.database).confirm(order_id)
+def confirm_order(order_id: int, service: OrderServiceDep):
+    return service.confirm(order_id)
 
 
 @router.post("/{order_id}/cancel")
-def cancel_order(order_id: int, request: Request):
-    return OrderService(request.app.state.database).cancel(order_id)
+def cancel_order(order_id: int, service: OrderServiceDep):
+    return service.cancel(order_id)
 
 
 @router.get("/{order_id}/notifications")
-def list_notifications(order_id: int, request: Request):
-    return OrderService(request.app.state.database).notifications(order_id)
+def list_notifications(order_id: int, service: OrderServiceDep):
+    return service.notifications(order_id)
