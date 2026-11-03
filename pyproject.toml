@@ -16,10 +16,14 @@ dev = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+addopts = "-p no:cacheprovider"
 
 [tool.coverage.run]
-source = ["app", "main"]
+source = ["."]
 relative_files = true
+# Con source = "." el XML usa rutas del proyecto (app/orders.py, main.py), que SonarQube resuelve.
+# Solo se omiten pruebas, scripts de apoyo y entornos; todo el código de aplicación se mide.
+omit = ["tests/*", "scripts/*", ".venv/*", ".worktrees/*", "htmlcov/*"]
 
 [tool.coverage.report]
 show_missing = true
