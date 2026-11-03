@@ -60,6 +60,13 @@ class Database:
                     unit_price_cents INTEGER NOT NULL CHECK(unit_price_cents > 0),
                     UNIQUE(order_id, product_id)
                 );
+                CREATE TABLE IF NOT EXISTS idempotency_keys (
+                    key TEXT PRIMARY KEY,
+                    request_hash TEXT NOT NULL,
+                    order_id INTEGER NOT NULL,
+                    response_json TEXT NOT NULL,
+                    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+                );
                 CREATE TABLE IF NOT EXISTS notifications (
                     id INTEGER PRIMARY KEY,
                     order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,

@@ -400,6 +400,29 @@
       },
       "post": {
         "operationId": "create_order_orders_post",
+        "parameters": [
+          {
+            "description": "Clave opcional elegida por el cliente. Repetir la misma clave con el mismo contenido devuelve el pedido original; con contenido distinto responde 409.",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 255,
+                  "minLength": 1,
+                  "pattern": "^[\\x21-\\x7E]+$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Clave opcional elegida por el cliente. Repetir la misma clave con el mismo contenido devuelve el pedido original; con contenido distinto responde 409.",
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {

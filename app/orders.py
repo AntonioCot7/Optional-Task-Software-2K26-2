@@ -1,10 +1,18 @@
+import json
 import sqlite3
 from typing import Annotated, Literal, NamedTuple
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.domain import OrderStatus, ShippingMethod
+from app.idempotency import (
+    CONFLICT_MESSAGE,
+    KEY_MAX_LENGTH,
+    KEY_PATTERN,
+    IdempotencyRepository,
+    fingerprint,
+)
 from app.order_repository import OrderRepository
 from app.pricing import PriceBreakdown, price_order
 
@@ -51,14 +59,39 @@ class OrderService:
             orders = OrderRepository(connection)
             if order_id is not None:
                 self._require_pending(orders, order_id, "Solo puede editar pedidos pendientes")
-            priced = self._price(orders, data)
-            category = priced.customer["category"]
-            if order_id is None:
-                order_id = orders.insert(data, category, priced.price)
-            else:
-                orders.update(order_id, data, category, priced.price)
-            orders.replace_items(order_id, priced.lines)
-            return orders.find_detail(order_id)
+            return self._write(orders, data, order_id)
+
+    def create(self, data: OrderInput, idempotency_key: str | None = None):
+        """Crea un pedido. Devuelve (pedido, repetido); ``repetido`` es True si se reutilizó la respuesta original.
+
+        Con clave de idempotencia, la búsqueda de la clave, la creación del pedido y el registro de la clave
+        ocurren en una única transacción ``BEGIN IMMEDIATE``: las peticiones concurrentes con la misma clave se
+        serializan y las posteriores ven la clave ya confirmada; cualquier error revierte todo.
+        """
+        with self.database.connect() as connection:
+            orders = OrderRepository(connection)
+            if idempotency_key is None:
+                return self._write(orders, data, None), False
+            keys = IdempotencyRepository(connection)
+            request_hash = fingerprint(data)
+            stored = keys.find(idempotency_key)
+            if stored is not None:
+                if stored["request_hash"] != request_hash:
+                    raise HTTPException(409, CONFLICT_MESSAGE)
+                return json.loads(stored["response_json"]), True
+            order = self._write(orders, data, None)
+            keys.save(idempotency_key, request_hash, order["id"], order)
+            return order, False
+
+    def _write(self, orders: OrderRepository, data: OrderInput, order_id):
+        priced = self._price(orders, data)
+        category = priced.customer["category"]
+        if order_id is None:
+            order_id = orders.insert(data, category, priced.price)
+        else:
+            orders.update(order_id, data, category, priced.price)
+        orders.replace_items(order_id, priced.lines)
+        return orders.find_detail(order_id)
 
     def quote(self, data: OrderInput):
         with self.database.connect() as connection:
@@ -152,9 +185,23 @@ def quote_order(data: OrderInput, service: OrderServiceDep):
     return service.quote(data)
 
 
+IdempotencyKeyHeader = Annotated[
+    str | None,
+    Header(
+        alias="Idempotency-Key", min_length=1, max_length=KEY_MAX_LENGTH, pattern=KEY_PATTERN,
+        description="Clave opcional elegida por el cliente. Repetir la misma clave con el mismo contenido "
+                    "devuelve el pedido original; con contenido distinto responde 409.",
+    ),
+]
+
+
 @router.post("", status_code=201)
-def create_order(data: OrderInput, service: OrderServiceDep):
-    return service.save(data)
+def create_order(data: OrderInput, service: OrderServiceDep, response: Response,
+                 idempotency_key: IdempotencyKeyHeader = None):
+    order, replayed = service.create(data, idempotency_key)
+    if replayed:
+        response.headers["Idempotent-Replayed"] = "true"
+    return order
 
 
 @router.get("")
