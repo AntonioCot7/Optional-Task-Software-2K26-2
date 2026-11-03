@@ -79,9 +79,8 @@ def update_product(product_id: int, data: ProductInput, database: DatabaseDep):
 
 @router.delete("/{product_id}", status_code=204)
 def delete_product(product_id: int, database: DatabaseDep):
-    with conflict_on_integrity_error("El producto pertenece a un pedido"):
-        with database.connect() as connection:
-            deleted = ProductRepository(connection).delete(product_id)
+    with conflict_on_integrity_error("El producto pertenece a un pedido"), database.connect() as connection:
+        deleted = ProductRepository(connection).delete(product_id)
     if not deleted:
         raise HTTPException(404, PRODUCT_NOT_FOUND)
     return Response(status_code=204)

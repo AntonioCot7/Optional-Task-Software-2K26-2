@@ -54,9 +54,8 @@ router = APIRouter(prefix="/customers", tags=["Customers"])
 
 @router.post("", status_code=201)
 def create_customer(data: CustomerInput, database: DatabaseDep):
-    with conflict_on_integrity_error(DUPLICATE_EMAIL):
-        with database.connect() as connection:
-            return CustomerRepository(connection).create(data)
+    with conflict_on_integrity_error(DUPLICATE_EMAIL), database.connect() as connection:
+        return CustomerRepository(connection).create(data)
 
 
 @router.get("")
@@ -76,9 +75,8 @@ def get_customer(customer_id: int, database: DatabaseDep):
 
 @router.put("/{customer_id}")
 def update_customer(customer_id: int, data: CustomerInput, database: DatabaseDep):
-    with conflict_on_integrity_error(DUPLICATE_EMAIL):
-        with database.connect() as connection:
-            customer = CustomerRepository(connection).update(customer_id, data)
+    with conflict_on_integrity_error(DUPLICATE_EMAIL), database.connect() as connection:
+        customer = CustomerRepository(connection).update(customer_id, data)
     if customer is None:
         raise HTTPException(404, CUSTOMER_NOT_FOUND)
     return customer
@@ -86,9 +84,8 @@ def update_customer(customer_id: int, data: CustomerInput, database: DatabaseDep
 
 @router.delete("/{customer_id}", status_code=204)
 def delete_customer(customer_id: int, database: DatabaseDep):
-    with conflict_on_integrity_error("El cliente tiene pedidos"):
-        with database.connect() as connection:
-            deleted = CustomerRepository(connection).delete(customer_id)
+    with conflict_on_integrity_error("El cliente tiene pedidos"), database.connect() as connection:
+        deleted = CustomerRepository(connection).delete(customer_id)
     if not deleted:
         raise HTTPException(404, CUSTOMER_NOT_FOUND)
     return Response(status_code=204)
