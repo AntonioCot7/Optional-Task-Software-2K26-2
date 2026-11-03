@@ -1,0 +1,82 @@
+# Demo Adicional 2: cola + worker + DLQ (servidor real, rama adicional-2-cola-dlq)
+# Fecha: 2026-11-02T23:06:00-05:00  | LAB_NOTIFICATION_BASE_DELAY=0.5 (acelera la espera)
+
+== 1. Justo tras confirmar: cola con 3 pendientes y ninguna notificación registrada
+{
+  "queue": [
+    [
+      "ok@example.com",
+      "pending",
+      0
+    ],
+    [
+      "temp-fail-1@example.com",
+      "pending",
+      0
+    ],
+    [
+      "perm-fail@example.com",
+      "pending",
+      0
+    ]
+  ],
+  "notificaciones_del_pedido_ok": [
+    {
+      "id": 1,
+      "order_id": 1,
+      "recipient": "ok@example.com",
+      "message": "Pedido 1 confirmado. Total: 3500 centavos."
+    }
+  ]
+}
+
+== 2. Tras unos segundos
+{
+  "queue": [],
+  "dlq": [
+    {
+      "id": 1,
+      "queue_id": 3,
+      "order_id": 3,
+      "recipient": "perm-fail@example.com",
+      "message": "Pedido 3 confirmado. Total: 3500 centavos.",
+      "dedup_key": "order-confirmed:3",
+      "attempts": 1,
+      "total_attempts": 1,
+      "last_error": "Buzón inexistente (simulado)",
+      "failed_at": "2026-11-03 04:06:01"
+    }
+  ],
+  "notificaciones": {
+    "ok": [
+      "ok@example.com"
+    ],
+    "temp-fail-1": [
+      "temp-fail-1@example.com"
+    ],
+    "perm-fail": []
+  }
+}
+
+== 3. Reprocesamiento explícito de la DLQ
+{
+  "dlq_id": 1,
+  "queue_id": 1,
+  "status": "requeued"
+}
+
+== 4. perm-fail vuelve a fallar y regresa a la DLQ (nueva entrada)
+[
+  {
+    "id": 2,
+    "queue_id": 1,
+    "order_id": 3,
+    "recipient": "perm-fail@example.com",
+    "message": "Pedido 3 confirmado. Total: 3500 centavos.",
+    "dedup_key": "order-confirmed:3",
+    "attempts": 1,
+    "total_attempts": 2,
+    "last_error": "Buzón inexistente (simulado)",
+    "failed_at": "2026-11-03 04:06:04"
+  }
+]

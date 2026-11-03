@@ -31,4 +31,6 @@ def test_all_documented_operations_exist(tmp_path):
         ("/orders/{order_id}", "GET"), ("/orders/{order_id}", "PUT"), ("/orders/{order_id}", "DELETE"),
         ("/orders/{order_id}/confirm", "POST"), ("/orders/{order_id}/cancel", "POST"),
         ("/orders/{order_id}/notifications", "GET"),
+        ("/notifications/queue", "GET"), ("/notifications/dlq", "GET"),
+        ("/notifications/dlq/{dlq_id}/reprocess", "POST"),
     }

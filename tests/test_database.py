@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 
 from app.database import Database
 from main import create_app
-from tests.helpers import make_customer, make_product, order_body
+from tests.helpers import drain_notifications, make_customer, make_product, order_body
 
 
 def test_initialize_creates_parent_directory_and_is_idempotent(tmp_path):
@@ -73,6 +73,8 @@ def test_confirmed_state_stock_and_notification_survive_restart(db_path):
     with TestClient(create_app(db_path)) as second:
         assert second.get(f"/orders/{order['id']}").json()["status"] == "confirmed"
         assert second.get(f"/products/{product['id']}").json()["stock"] == 3
+        assert len(second.get("/notifications/queue").json()) == 1      # el pendiente sobrevivió al reinicio
+        drain_notifications(second)
         assert len(second.get(f"/orders/{order['id']}/notifications").json()) == 1
         assert second.post(f"/orders/{order['id']}/confirm").status_code == 409
 

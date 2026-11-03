@@ -1,10 +1,12 @@
 import sqlite3
+import time
 from typing import Annotated, Literal, NamedTuple
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.domain import OrderStatus, ShippingMethod
+from app.notification_queue import NotificationQueue
 from app.order_repository import OrderRepository
 from app.pricing import PriceBreakdown, price_order
 
@@ -81,7 +83,11 @@ class OrderService:
                     raise HTTPException(409, f"Stock insuficiente para producto {item['product_id']}")
             customer = orders.find_customer(order["customer_id"])
             message = f"Pedido {order_id} confirmado. Total: {order['total_cents']} centavos."
-            orders.add_notification(order_id, customer["email"], message)
+            # Patrón outbox: el mensaje se encola en la misma transacción que el stock y el estado; un worker
+            # lo procesa por separado. La dedup_key evita encolar dos veces la misma confirmación.
+            NotificationQueue(connection).enqueue(
+                order_id, customer["email"], message, f"order-confirmed:{order_id}", time.time(),
+            )
             orders.set_status(order_id, OrderStatus.CONFIRMED)
             return {"id": order_id, "status": OrderStatus.CONFIRMED, "message": message}
 

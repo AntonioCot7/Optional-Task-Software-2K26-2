@@ -6,6 +6,12 @@ from app.database import Database
 from main import create_app
 
 
+@pytest.fixture(autouse=True)
+def no_background_worker(monkeypatch):
+    """Las pruebas controlan el worker a mano (drain) para que sean deterministas."""
+    monkeypatch.setenv("LAB_NOTIFICATION_WORKER", "0")
+
+
 @pytest.fixture
 def db_path(tmp_path):
     return tmp_path / "test.sqlite3"

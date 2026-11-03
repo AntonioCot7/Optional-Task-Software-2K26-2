@@ -1,7 +1,7 @@
 """Integración: API de pedidos (cotización, CRUD, estados, stock, snapshots de precio)."""
 import pytest
 
-from tests.helpers import make_customer, make_product, order_body
+from tests.helpers import drain_notifications, make_customer, make_product, order_body
 
 
 def stock_of(client, product):
@@ -369,6 +369,8 @@ def test_confirm_deducts_stock_registers_notification_and_returns_message(client
     assert response.json() == {"id": order["id"], "status": "confirmed", "message": message}
     assert stock_of(client, product) == 3
     assert client.get(f"/orders/{order['id']}").json()["status"] == "confirmed"
+    assert client.get(f"/orders/{order['id']}/notifications").json() == []   # aún en la cola
+    drain_notifications(client)
     notifications = client.get(f"/orders/{order['id']}/notifications").json()
     assert len(notifications) == 1
     assert notifications[0]["order_id"] == order["id"]
@@ -410,6 +412,7 @@ def test_failed_confirm_can_succeed_after_restocking(client):
     client.put(f"/products/{product['id']}", json={"name": "P", "price_cents": 1000, "stock": 2})
     assert client.post(f"/orders/{order['id']}/confirm").status_code == 200
     assert stock_of(client, product) == 0
+    drain_notifications(client)
     assert len(client.get(f"/orders/{order['id']}/notifications").json()) == 1
 
 

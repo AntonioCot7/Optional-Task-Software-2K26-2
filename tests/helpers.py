@@ -28,3 +28,12 @@ def order_body(customer_id, items, shipping="standard"):
         "shipping": shipping,
         "items": [{"product_id": pid, "quantity": qty} for pid, qty in items],
     }
+
+
+def drain_notifications(client_or_database, **settings):
+    """Ejecuta el worker de notificaciones hasta vaciar lo elegible (acepta un TestClient o una Database)."""
+    from app.notification_queue import WorkerSettings
+    from app.notification_worker import NotificationWorker
+    database = getattr(getattr(client_or_database, "app", None), "state", client_or_database)
+    database = getattr(database, "database", database)
+    return NotificationWorker(database, settings=WorkerSettings(**settings)).drain()

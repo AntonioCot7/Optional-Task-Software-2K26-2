@@ -2,6 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from main import create_app
+from tests.helpers import drain_notifications
 
 
 @pytest.fixture
@@ -32,6 +33,7 @@ def test_confirmation_keeps_price_and_deducts_stock_once(client):
     assert client.post(f"/orders/{order['id']}/confirm").status_code == 409
     assert client.get(f"/products/{product_id}").json()["stock"] == 3
     assert client.get(f"/orders/{order['id']}").json()["total_cents"] == 5500
+    drain_notifications(client)   # Adicional 2: la notificación la registra el worker, no confirm
     assert len(client.get(f"/orders/{order['id']}/notifications").json()) == 1
 
 

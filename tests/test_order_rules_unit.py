@@ -7,6 +7,7 @@ import pytest
 from fastapi import HTTPException
 
 from app.orders import ItemInput, OrderInput, OrderService
+from tests.helpers import drain_notifications
 
 
 def insert_customer(database, category="regular", email="c@example.com"):
@@ -175,6 +176,7 @@ def test_confirm_records_exactly_one_notification_with_customer_email(database):
 
     assert result == {"id": order_id, "status": "confirmed",
                       "message": f"Pedido {order_id} confirmado. Total: 4321 centavos."}
+    drain_notifications(database)   # Adicional 2: el worker procesa el mensaje encolado por confirm
     notifications = service.notifications(order_id)
     assert [(n["recipient"], n["message"]) for n in notifications] == [("who@example.com", result["message"])]
 

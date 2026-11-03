@@ -66,4 +66,40 @@ class Database:
                     recipient TEXT NOT NULL,
                     message TEXT NOT NULL
                 );
+                CREATE TABLE IF NOT EXISTS notification_queue (
+                    id INTEGER PRIMARY KEY,
+                    order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+                    recipient TEXT NOT NULL,
+                    message TEXT NOT NULL,
+                    dedup_key TEXT NOT NULL UNIQUE,
+                    status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'processing')),
+                    attempts INTEGER NOT NULL DEFAULT 0,
+                    total_attempts INTEGER NOT NULL DEFAULT 0,
+                    next_attempt_at REAL NOT NULL,
+                    locked_until REAL,
+                    last_error TEXT,
+                    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+                );
+                CREATE TABLE IF NOT EXISTS notification_dlq (
+                    id INTEGER PRIMARY KEY,
+                    queue_id INTEGER NOT NULL,
+                    order_id INTEGER NOT NULL,
+                    recipient TEXT NOT NULL,
+                    message TEXT NOT NULL,
+                    dedup_key TEXT NOT NULL,
+                    attempts INTEGER NOT NULL,
+                    total_attempts INTEGER NOT NULL,
+                    last_error TEXT NOT NULL,
+                    failed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    reprocessed_at TEXT
+                );
             """)
+            self._migrate(connection)
+
+    @staticmethod
+    def _migrate(connection):
+        """Adapta bases creadas antes de la cola: la clave de deduplicación hace único el efecto local."""
+        columns = {row["name"] for row in connection.execute("PRAGMA table_info(notifications)")}
+        if "dedup_key" not in columns:
+            connection.execute("ALTER TABLE notifications ADD COLUMN dedup_key TEXT")
+        connection.execute("CREATE UNIQUE INDEX IF NOT EXISTS ux_notifications_dedup ON notifications(dedup_key)")

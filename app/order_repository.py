@@ -40,7 +40,7 @@ class OrderRepository:
 
     def notifications(self, order_id):
         return [dict(row) for row in self.connection.execute(
-            "SELECT * FROM notifications WHERE order_id = ? ORDER BY id", (order_id,),
+            "SELECT id, order_id, recipient, message FROM notifications WHERE order_id = ? ORDER BY id", (order_id,),
         )]
 
     # ---- escrituras
@@ -82,12 +82,6 @@ class OrderRepository:
             (quantity, product_id, quantity),
         )
         return cursor.rowcount > 0
-
-    def add_notification(self, order_id, recipient, message) -> None:
-        self.connection.execute(
-            "INSERT INTO notifications(order_id, recipient, message) VALUES (?, ?, ?)",
-            (order_id, recipient, message),
-        )
 
     @staticmethod
     def _values(data, customer_category, price):

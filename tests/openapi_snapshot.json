@@ -380,6 +380,87 @@
         ]
       }
     },
+    "/notifications/dlq": {
+      "get": {
+        "description": "Mensajes que agotaron sus intentos o fallaron de forma permanente (aún sin reprocesar).",
+        "operationId": "list_dead_letters_notifications_dlq_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Dead Letters",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/notifications/dlq/{dlq_id}/reprocess": {
+      "post": {
+        "description": "Devuelve el mensaje a la cola con su ciclo de intentos en cero.",
+        "operationId": "reprocess_dead_letter_notifications_dlq__dlq_id__reprocess_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dlq_id",
+            "required": true,
+            "schema": {
+              "title": "Dlq Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reprocess Dead Letter",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/notifications/queue": {
+      "get": {
+        "description": "Mensajes pendientes o en procesamiento.",
+        "operationId": "list_queue_notifications_queue_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Queue",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
     "/orders": {
       "get": {
         "operationId": "list_orders_orders_get",
