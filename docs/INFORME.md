@@ -23,7 +23,7 @@ resueltos, cada uno en su rama (sección 9).
 
 | Requisito | Dónde |
 | --- | --- |
-| 1. Ejecutar la aplicación | §3, `docs/evidencias/01-…`, `09-…`, `docs/capturas/01-swagger-inicial.png`, `scripts/recorrido.py` |
+| 1. Ejecutar la aplicación | §3, `docs/evidencias/01-…`, `09-…`, `docs/capturas/01-swagger-inicial.png`, `09-swagger-final.png`, `scripts/recorrido.py` |
 | 2. Pruebas ≥ 80 % antes y después | §4, `tests/`, `docs/evidencias/02-`, `03-`, `08-` |
 | 3. SonarQube inicial y final | §5, `docs/evidencias/04-` a `07-`, `docs/capturas/04-` a `07-` |
 | 4. Code smells (≥ 4) | §6 (seis, más uno no resuelto) |
@@ -72,7 +72,7 @@ notificación, repetir confirmación → 409 sin descontar más stock).
 
 - Evidencia inicial: [`01-ejecucion-inicial.txt`](evidencias/01-ejecucion-inicial.txt) — **TODO CORRECTO**, con versiones de Python y uv. Captura: [`01-swagger-inicial.png`](capturas/01-swagger-inicial.png).
 - Evidencia final: [`09-ejecucion-final.txt`](evidencias/09-ejecucion-final.txt) — mismo resultado tras refactorizar.
-- No se generó una captura de Swagger del estado final (falló la captura automática); el contrato es idéntico por el snapshot OpenAPI, así que la pantalla sería la misma.
+- Captura del estado final: [`09-swagger-final.png`](capturas/09-swagger-final.png) (tomada manualmente con `uv run main.py` sobre `post-refactor`); es idéntica a la inicial, como garantiza el snapshot OpenAPI.
 
 ## 4. Pruebas y cobertura (punto 2)
 
@@ -347,7 +347,7 @@ caches, tokens ni contraseñas (`.gitignore`; `data/`, `htmlcov/`, `coverage.xml
 - **S8415** (documentar `HTTPException` en `responses`): requiere cambiar el OpenAPI; quedó sin aplicar para conservar el contrato.
 - **Pruebas con hallazgos de estilo** (S5778, S9073, S3415) bajo el perfil estricto: no se corrigieron para no alterar la suite entre antes y después.
 - **Quality Gate** *Sonar way* solo mira código nuevo: no refleja el estado global; por eso se informan métricas globales y el análisis auxiliar.
-- **Capturas:** las de SonarQube se tomaron con Playwright sobre Edge; falta la captura de Swagger del estado final (el contrato es idéntico por snapshot). Un aviso de producto de SonarQube aparece en una esquina de algunas capturas.
+- **Capturas:** las de SonarQube se tomaron con Playwright sobre Edge y las de Swagger a mano. Un aviso de producto de SonarQube aparece en una esquina de algunas capturas.
 - **Escaneo del estado final** con el scanner en Docker y `-Dsonar.scm.disabled=true` (el *worktree* de git no es visible dentro del contenedor): afecta solo a la información de autoría (*blame*), no a las métricas ni a los hallazgos.
 - **SonarQube** usa la base H2 embebida (aviso del propio servidor: solo para evaluación); es un laboratorio local.
 - Cobertura de línea ≠ calidad de las aserciones: se complementó con mutaciones manuales solo en los adicionales; no hay una herramienta de mutación automática.
